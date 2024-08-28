@@ -1,4 +1,4 @@
-group = "io.piano.piano_analytics"
+group = "io.piano.flutter.piano_analytics"
 version = "1.0"
 
 buildscript {
