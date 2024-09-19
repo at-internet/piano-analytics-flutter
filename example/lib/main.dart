@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:piano_analytics/enums.dart';
 
-import 'package:piano_analytics/piano_consents.dart';
 import 'package:piano_analytics/piano_analytics.dart';
 
 void main() {
@@ -15,17 +15,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final _pianoConsents = PianoConsents(
-    requireConsents: true,
-    defaultPurposes: {
-      PianoConsentProduct.pa: PianoConsentPurpose.audienceMeasurement
-    }
-  );
-  
-  final _pianoAnalytics = PianoAnalytics(
-    site: 123456789,
-    collectDomain: "xxxxxxx.pa-cd.com"
-  );
+  final _pianoAnalytics =
+      PianoAnalytics(site: 123456789, collectDomain: "xxxxxxx.pa-cd.com");
 
   @override
   void initState() {
@@ -34,7 +25,6 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> initPlugins() async {
-    await _pianoConsents.init();
     await _pianoAnalytics.init();
   }
 
@@ -69,22 +59,10 @@ class _MyAppState extends State<MyApp> {
                   child: const Text("Send")),
               FilledButton(
                   onPressed: () async {
-                    await _pianoConsents.set(
-                        purpose: PianoConsentPurpose.audienceMeasurement,
-                        mode: PianoConsentMode.optIn,
-                        products: [PianoConsentProduct.pa]);
+                    await _pianoAnalytics
+                        .privacyIncludeStorageFeatures(features: [PrivacyStorageFeature.crash, PrivacyStorageFeature.visitor], modes: [PrivacyMode.custom]);
                   },
-                  child: const Text("Set consents")),
-              FilledButton(
-                  onPressed: () async {
-                    await _pianoConsents.setAll(mode: PianoConsentMode.optOut);
-                  },
-                  child: const Text("Set all consents")),
-              FilledButton(
-                  onPressed: () async {
-                    await _pianoConsents.clear();
-                  },
-                  child: const Text("Clear consents"))
+                  child: const Text("Include storage features"))
             ],
           ),
         ),

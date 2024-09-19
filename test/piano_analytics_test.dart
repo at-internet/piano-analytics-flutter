@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:piano_analytics/enums.dart';
 import 'package:piano_analytics/piano_analytics.dart';
 
 PianoAnalytics getPianoAnalytics(MethodChannel channel) {
@@ -14,6 +15,51 @@ main() {
       "piano_analytics", StandardMethodCodec(PianoAnalyticsMessageCodec()));
 
   MethodCall? call;
+
+  Future<void> testStorageFeatures(
+      String method,
+      Function(PianoAnalytics pa, List<PrivacyStorageFeature> features,
+              List<PrivacyMode> modes)
+          invoke) async {
+    var pianoAnalytics = getPianoAnalytics(channel);
+    await pianoAnalytics.init();
+
+    var testFeatures = [
+      PrivacyStorageFeature.all,
+      PrivacyStorageFeature.crash,
+      PrivacyStorageFeature.lifecycle,
+      PrivacyStorageFeature.privacy,
+      PrivacyStorageFeature.user,
+      PrivacyStorageFeature.visitor
+    ];
+
+    var testModes = [
+      PrivacyMode.custom,
+      PrivacyMode.exempt,
+      PrivacyMode.noConsent,
+      PrivacyMode.noStorage,
+      PrivacyMode.optIn,
+      PrivacyMode.optOut
+    ];
+
+    await invoke(pianoAnalytics, testFeatures, testModes);
+
+    expect(call?.method, method);
+
+    var arguments = call?.arguments as Map<Object?, Object?>;
+
+    var features = arguments["features"] as List<Object?>;
+    expect(features.length, testFeatures.length);
+    for (var feature in testFeatures) {
+      expect(features.contains(feature.value), true);
+    }
+
+    var modes = arguments["modes"] as List<Object?>;
+    expect(modes.length, testModes.length);
+    for (var mode in testModes) {
+      expect(modes.contains(mode.value), true);
+    }
+  }
 
   setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -38,7 +84,7 @@ main() {
 
     expect(arguments["site"], 123456789);
     expect(arguments["collectDomain"], "xxxxxxx.pa-cd.com");
-    expect(arguments["visitorIDType"], PianoAnalyticsVisitorIDType.uuid.value);
+    expect(arguments["visitorIDType"], VisitorIDType.uuid.value);
   });
 
   test("send", () async {
@@ -77,4 +123,18 @@ main() {
     expect(properties["doubleArray"], [1.0, 2.0, 3.0]);
     expect(properties["stringArray"], ["a", "b", "c"]);
   });
+
+  test("privacyIncludeStorageFeatures", () async {
+    await testStorageFeatures(
+        "privacyIncludeStorageFeatures",
+        (pa, features, modes) =>
+            pa.privacyIncludeStorageFeatures(features: features, modes: modes));
+  });
+
+  test("privacyExcludeStorageFeatures", () async {
+    await testStorageFeatures(
+        "privacyExcludeStorageFeatures",
+        (pa, features, modes) =>
+            pa.privacyExcludeStorageFeatures(features: features, modes: modes));
+  }); 
 }

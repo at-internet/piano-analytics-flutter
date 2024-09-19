@@ -8,6 +8,8 @@ import io.mockk.verify
 import io.piano.android.analytics.Configuration
 import io.piano.android.analytics.PianoAnalytics
 import io.piano.android.analytics.model.Event
+import io.piano.android.analytics.model.PrivacyMode
+import io.piano.android.analytics.model.PrivacyStorageFeature
 import io.piano.android.analytics.model.Property
 import io.piano.android.analytics.model.PropertyName
 import io.piano.android.analytics.model.VisitorIDType
@@ -24,7 +26,7 @@ internal class PianoAnalyticsPluginTest: BasePluginTest() {
     }
 
     @Test
-    fun `Check PianoAnalytics init`() {
+    fun `Check init`() {
         every { PianoAnalytics.Companion.init(any(), any(), any(), any()) } returns mockk()
 
         call("init", mapOf(
@@ -43,7 +45,7 @@ internal class PianoAnalyticsPluginTest: BasePluginTest() {
     }
 
     @Test
-    fun `Check PianoAnalytics send`() {
+    fun `Check send`() {
         val pianoAnalytics: PianoAnalytics = mockk()
         every { PianoAnalytics.Companion.getInstance() } returns pianoAnalytics
         every { pianoAnalytics.sendEvents(any()) } returns Unit
@@ -53,15 +55,22 @@ internal class PianoAnalyticsPluginTest: BasePluginTest() {
                 mapOf(
                     "name" to "page.display",
                     "data" to mapOf(
-                        "bool" to true,
-                        "int" to 1,
-                        "long" to 1L,
-                        "double" to 1.0,
-                        "string" to "value",
-                        "intArray" to listOf(1, 2, 3),
-                        "doubleArray" to listOf(1.0, 2.0, 3.0),
-                        "stringArray" to listOf("a", "b", "c"),
-                        "date" to Date(0)
+                        "bool" to mapOf("value" to true),
+                        "bool_force" to mapOf("value" to "true", "forceType" to "b"),
+                        "int" to mapOf("value" to 1),
+                        "int_force" to mapOf("value" to "1", "forceType" to "n"),
+                        "long" to mapOf("value" to 1L),
+                        "double" to mapOf("value" to 1.0),
+                        "double_force" to mapOf("value" to "1.0", "forceType" to "f"),
+                        "string" to mapOf("value" to "value"),
+                        "string_force" to mapOf("value" to 1, "forceType" to "s"),
+                        "date" to mapOf("value" to Date(0)),
+                        "intArray" to mapOf("value" to listOf(1, 2, 3)),
+                        "intArray_force" to mapOf("value" to listOf("1", "2", "3"), "forceType" to "a:n"),
+                        "doubleArray" to mapOf("value" to listOf(1.0, 2.0, 3.0)),
+                        "doubleArray_force" to mapOf("value" to listOf("1.0", "2.0", "3.0"), "forceType" to "a:f"),
+                        "stringArray" to mapOf("value" to listOf("a", "b", "c")),
+                        "stringArray_force" to mapOf("value" to listOf(1, 2, 3), "forceType" to "a:s")
                     )
                 )
             )
@@ -86,10 +95,66 @@ internal class PianoAnalyticsPluginTest: BasePluginTest() {
         assertEquals(setOf(1, 2, 3), event.properties.setOf("intArray"))
         assertEquals(setOf(1.0, 2.0, 3.0), event.properties.setOf("doubleArray"))
         assertEquals(setOf("a", "b", "c"), event.properties.setOf("stringArray"))
+
+        assertEquals("true", event.properties.valueOf("bool_force"))
+        assertEquals(Property.Type.BOOLEAN, event.properties.propertyOf("bool_force")?.forceType)
+
+        assertEquals("1", event.properties.valueOf("int_force"))
+        assertEquals(Property.Type.INTEGER, event.properties.propertyOf("int_force")?.forceType)
+
+        assertEquals("1.0", event.properties.valueOf("double_force"))
+        assertEquals(Property.Type.FLOAT, event.properties.propertyOf("double_force")?.forceType)
+
+        assertEquals(1, event.properties.valueOf("string_force"))
+        assertEquals(Property.Type.STRING, event.properties.propertyOf("string_force")?.forceType)
+
+        assertEquals(setOf("1", "2", "3"), event.properties.setOf("intArray_force"))
+        assertEquals(Property.Type.INTEGER_ARRAY, event.properties.propertyOf("intArray_force")?.forceType)
+
+        assertEquals(setOf("1.0", "2.0", "3.0"), event.properties.setOf("doubleArray_force"))
+        assertEquals(Property.Type.FLOAT_ARRAY, event.properties.propertyOf("doubleArray_force")?.forceType)
+
+        assertEquals(setOf(1, 2, 3), event.properties.setOf("stringArray_force"))
+        assertEquals(Property.Type.STRING_ARRAY, event.properties.propertyOf("stringArray_force")?.forceType)
     }
 
-    private fun Set<Property>.valueOf(name: String) = this.firstOrNull { it.name.key == name }?.value
-    private fun Set<Property>.setOf(name: String) = (this.valueOf(name) as? Array<*>)?.toSet()
+    @Test
+    fun `Check privacyIncludeStorageFeatures`() {
+        mockkObject(PrivacyMode.CUSTOM)
+        mockkObject(PrivacyMode.OPTIN)
+
+        val customAllowedStorageFeatures = mutableSetOf<PrivacyStorageFeature>()
+        every { PrivacyMode.CUSTOM.allowedStorageFeatures } returns customAllowedStorageFeatures
+
+        val optInAllowedStorageFeatures = mutableSetOf<PrivacyStorageFeature>()
+        every { PrivacyMode.OPTIN.allowedStorageFeatures } returns optInAllowedStorageFeatures
+
+        call("privacyIncludeStorageFeatures", mapOf(
+            "features" to listOf("CRASH",),
+            "modes" to listOf("custom")
+        ))
+
+        assertEquals(customAllowedStorageFeatures, setOf(PrivacyStorageFeature.CRASH))
+    }
+
+    @Test
+    fun `Check privacyExcludeStorageFeatures`() {
+        mockkObject(PrivacyMode.CUSTOM)
+
+        val customAllowedStorageFeatures = mutableSetOf(PrivacyStorageFeature.VISITOR, PrivacyStorageFeature.CRASH)
+        every { PrivacyMode.CUSTOM.allowedStorageFeatures } returns customAllowedStorageFeatures
+
+        call("privacyExcludeStorageFeatures", mapOf(
+            "features" to listOf("VISITOR",),
+            "modes" to listOf("custom")
+        ))
+
+        assertEquals(customAllowedStorageFeatures, setOf(PrivacyStorageFeature.CRASH))
+    }
+
+    private fun Set<Property>.propertyOf(name: String) = this.firstOrNull { it.name.key == name }
+    private fun Set<Property>.valueOf(name: String) = propertyOf(name)?.value
+    private fun Set<Property>.setOf(name: String) = (valueOf(name) as? Array<*>)?.toSet()
 
     private fun call(method: String, parameters: Map<String, Any>? = null) {
         return call(method, parameters) { PianoAnalyticsPlugin() }
