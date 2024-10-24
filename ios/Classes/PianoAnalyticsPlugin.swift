@@ -45,6 +45,18 @@ public class PianoAnalyticsPlugin: NSObject, FlutterPlugin {
                 try handleInit(call)
             case "send":
                 try handleSend(call)
+            case "privacyIncludeStorageFeatures":
+                try privacyChangeStorageFeatures(call)
+            case "privacyExcludeStorageFeatures":
+                try privacyChangeStorageFeatures(call, false)
+            case "privacyIncludeProperties":
+                try privacyChangeProperties(call)
+            case "privacyExcludeProperties":
+                try privacyChangeProperties(call, false)
+            case "privacyIncludeEvents":
+                try privacyChangeEvents(call)
+            case "privacyExcludeEvents":
+                try privacyChangeEvents(call, false)
             default:
                 result(FlutterMethodNotImplemented)
             }
@@ -92,6 +104,90 @@ public class PianoAnalyticsPlugin: NSObject, FlutterPlugin {
                 return Event(name, properties: Set(properties ?? []))
             }
         )
+    }
+    
+    private func privacyChangeStorageFeatures(_ call: FlutterMethodCall, _ include: Bool = true) throws {
+        let arguments = try getArguments(call)
+        
+        let features: [String] = try getArgument(call, arguments, "features")
+        let keys = try features.map { try PianoAnalyticsPlugin.getStorageKeyByFeature($0) }
+        
+        let modes: [String] = try getArgument(call, arguments, "modes")
+        let privacyModes = try modes.map { try PianoAnalyticsPlugin.getPrivacyMode($0) }
+        
+        if include {
+            PianoAnalytics.shared.privacyIncludeStorageKeys(keys, privacyModes: privacyModes)
+        } else {
+            PianoAnalytics.shared.privacyExcludeStorageKeys(keys, privacyModes: privacyModes)
+        }
+    }
+    
+    private func privacyChangeProperties(_ call: FlutterMethodCall, _ include: Bool = true) throws {
+        let arguments = try getArguments(call)
+        
+        let propertyNames: [String] = try getArgument(call, arguments, "propertyNames")
+        
+        let modes: [String] = try getArgument(call, arguments, "modes")
+        let privacyModes = try modes.map { try PianoAnalyticsPlugin.getPrivacyMode($0) }
+        
+        let eventNames = arguments["eventNames"] as? [String]
+        
+        if include {
+            PianoAnalytics.shared.privacyIncludeProperties(propertyNames, privacyModes: privacyModes, eventNames: eventNames)
+        } else {
+            PianoAnalytics.shared.privacyExcludeProperties(propertyNames, privacyModes: privacyModes, eventNames: eventNames)
+        }
+    }
+    
+    private func privacyChangeEvents(_ call: FlutterMethodCall, _ include: Bool = true) throws {
+        let arguments = try getArguments(call)
+        
+        let eventNames: [String] = try getArgument(call, arguments, "eventNames")
+        
+        let modes: [String] = try getArgument(call, arguments, "modes")
+        let privacyModes = try modes.map { try PianoAnalyticsPlugin.getPrivacyMode($0) }
+        
+        if include {
+            PianoAnalytics.shared.privacyIncludeEvents(eventNames, privacyModes: privacyModes)
+        } else {
+            PianoAnalytics.shared.privacyExcludeEvents(eventNames, privacyModes: privacyModes)
+        }
+    }
+    
+    private static func getStorageKeyByFeature(_ feature: String) throws -> String {
+        switch feature {
+        case "VISITOR":
+            return PA.Privacy.Storage.VisitorId
+        case "CRASH":
+            return PA.Privacy.Storage.Crash
+        case "LIFECYCLE":
+            return PA.Privacy.Storage.Lifecycle
+        case "PRIVACY":
+            return PA.Privacy.Storage.Privacy
+        case "USER":
+            return PA.Privacy.Storage.User
+        default:
+            throw PluginError.message("Invalid feature \"\(feature)\"")
+        }
+    }
+    
+    private static func getPrivacyMode(_ name: String) throws -> String {
+        switch name {
+        case "opt-in":
+            return "optin"
+        case "opt-out":
+            return "optout"
+        case "exempt":
+            return "exempt"
+        case "custom":
+            return "custom"
+        case "no-consent":
+            return "no-consent"
+        case "no-storage":
+            return "no-storage"
+        default:
+            throw PluginError.message("Invalid privacy mode \"\(name)\"")
+        }
     }
 }
 

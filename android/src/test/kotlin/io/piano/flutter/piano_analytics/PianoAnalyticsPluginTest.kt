@@ -119,37 +119,107 @@ internal class PianoAnalyticsPluginTest: BasePluginTest() {
     }
 
     @Test
-    fun `Check privacyIncludeStorageFeatures`() {
+    fun `Check privacyChangeStorageFeatures`() {
+        mockkObject(PrivacyMode.EXEMPT)
         mockkObject(PrivacyMode.CUSTOM)
-        mockkObject(PrivacyMode.OPTIN)
 
-        val customAllowedStorageFeatures = mutableSetOf<PrivacyStorageFeature>()
-        every { PrivacyMode.CUSTOM.allowedStorageFeatures } returns customAllowedStorageFeatures
-
-        val optInAllowedStorageFeatures = mutableSetOf<PrivacyStorageFeature>()
-        every { PrivacyMode.OPTIN.allowedStorageFeatures } returns optInAllowedStorageFeatures
+        val allowedStorageFeatures = mutableSetOf<PrivacyStorageFeature>()
+        val forbiddenStorageFeatures = mutableSetOf<PrivacyStorageFeature>()
+        every { PrivacyMode.EXEMPT.allowedStorageFeatures } returns allowedStorageFeatures
+        every { PrivacyMode.CUSTOM.forbiddenStorageFeatures } returns forbiddenStorageFeatures
 
         call("privacyIncludeStorageFeatures", mapOf(
-            "features" to listOf("CRASH",),
+            "features" to listOf("CRASH"),
+            "modes" to listOf("exempt")
+        ))
+
+        assertEquals(setOf(PrivacyStorageFeature.CRASH), allowedStorageFeatures)
+
+        call("privacyExcludeStorageFeatures", mapOf(
+            "features" to listOf("LIFECYCLE"),
             "modes" to listOf("custom")
         ))
 
-        assertEquals(customAllowedStorageFeatures, setOf(PrivacyStorageFeature.CRASH))
+        assertEquals(setOf(PrivacyStorageFeature.LIFECYCLE), forbiddenStorageFeatures)
     }
 
     @Test
-    fun `Check privacyExcludeStorageFeatures`() {
+    fun `Check privacyChangeProperty`() {
+        mockkObject(PrivacyMode.EXEMPT)
         mockkObject(PrivacyMode.CUSTOM)
 
-        val customAllowedStorageFeatures = mutableSetOf(PrivacyStorageFeature.VISITOR, PrivacyStorageFeature.CRASH)
-        every { PrivacyMode.CUSTOM.allowedStorageFeatures } returns customAllowedStorageFeatures
+        val allowedPropertyKeys = mutableMapOf(
+            Event.PAGE_DISPLAY to mutableSetOf(
+                PropertyName("allowed_property_1"),
+                PropertyName("allowed_property_3"),
+            )
+        )
+        val forbiddenPropertyKeys = mutableMapOf(
+            Event.ANY to mutableSetOf(
+                PropertyName("forbidden_property_1"),
+                PropertyName("forbidden_property_3"),
+            )
+        )
+        every { PrivacyMode.EXEMPT.allowedPropertyKeys } returns allowedPropertyKeys
+        every { PrivacyMode.CUSTOM.forbiddenPropertyKeys } returns forbiddenPropertyKeys
 
-        call("privacyExcludeStorageFeatures", mapOf(
-            "features" to listOf("VISITOR",),
+        call("privacyIncludeProperties", mapOf(
+            "propertyNames" to listOf("allowed_property_1", "allowed_property_2"),
+            "modes" to listOf("exempt"),
+            "eventNames" to listOf(Event.PAGE_DISPLAY)
+        ))
+
+        assertEquals(1, allowedPropertyKeys.count())
+        assertEquals(
+            mutableSetOf(
+                PropertyName("allowed_property_1"),
+                PropertyName("allowed_property_2"),
+                PropertyName("allowed_property_3"),
+            ),
+            allowedPropertyKeys[Event.PAGE_DISPLAY]
+        )
+
+        call("privacyExcludeProperties", mapOf(
+            "propertyNames" to listOf("forbidden_property_1", "forbidden_property_2"),
             "modes" to listOf("custom")
         ))
 
-        assertEquals(customAllowedStorageFeatures, setOf(PrivacyStorageFeature.CRASH))
+        assertEquals(1, forbiddenPropertyKeys.count())
+        assertEquals(
+            mutableSetOf(
+                PropertyName("forbidden_property_1"),
+                PropertyName("forbidden_property_2"),
+                PropertyName("forbidden_property_3"),
+            ),
+            forbiddenPropertyKeys[Event.ANY]
+        )
+    }
+
+    @Test
+    fun `Check privacyChangeEvents`() {
+        mockkObject(PrivacyMode.EXEMPT)
+        mockkObject(PrivacyMode.CUSTOM)
+
+        val allowedEventNames = mutableSetOf(Event.PAGE_DISPLAY, Event.ANY)
+        val forbiddenEventNames = mutableSetOf(Event.PAGE_DISPLAY, Event.ANY)
+        every { PrivacyMode.EXEMPT.allowedEventNames } returns allowedEventNames
+        every { PrivacyMode.CUSTOM.forbiddenEventNames } returns forbiddenEventNames
+
+        call("privacyIncludeEvents", mapOf(
+            "eventNames" to listOf(Event.PAGE_DISPLAY, Event.CLICK_ACTION),
+            "modes" to listOf("exempt")
+        ))
+
+        assertEquals(3, allowedEventNames.count())
+        assertEquals(allowedEventNames, setOf(Event.PAGE_DISPLAY, Event.ANY, Event.CLICK_ACTION))
+
+        call("privacyExcludeEvents", mapOf(
+            "eventNames" to listOf(Event.PAGE_DISPLAY, Event.CLICK_ACTION),
+            "modes" to listOf("custom")
+        ))
+
+        assertEquals(3, forbiddenEventNames.count())
+        assertEquals(forbiddenEventNames, setOf(Event.PAGE_DISPLAY, Event.ANY, Event.CLICK_ACTION))
     }
 
     private fun Set<Property>.propertyOf(name: String) = this.firstOrNull { it.name.key == name }

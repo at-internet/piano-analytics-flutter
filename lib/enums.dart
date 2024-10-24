@@ -40,8 +40,7 @@ enum PrivacyStorageFeature {
   crash("CRASH"),
   lifecycle("LIFECYCLE"),
   privacy("PRIVACY"),
-  user("USER"),
-  all("ALL");
+  user("USER");
 
   final String value;
 

@@ -75,8 +75,12 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             when (call.method) {
                 "init" -> handleInit(call)
                 "send" -> handleSend(call)
-                "privacyIncludeStorageFeatures" -> handlePrivacyIncludeStorageFeatures(call)
-                "privacyExcludeStorageFeatures" -> handlePrivacyExcludeStorageFeatures(call)
+                "privacyIncludeStorageFeatures" -> privacyChangeStorageFeatures(call)
+                "privacyExcludeStorageFeatures" -> privacyChangeStorageFeatures(call, false)
+                "privacyIncludeProperties" -> privacyChangeProperties(call)
+                "privacyExcludeProperties" -> privacyChangeProperties(call, false)
+                "privacyIncludeEvents" -> privacyChangeEvents(call)
+                "privacyExcludeEvents" -> privacyChangeEvents(call, false)
                 else -> error("Unknown method")
             }
             result.success(null)
@@ -120,23 +124,38 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         PianoAnalytics.getInstance().sendEvents(*events)
     }
 
-    private fun handlePrivacyIncludeStorageFeatures(call: MethodCall) {
+    private fun privacyChangeStorageFeatures(call: MethodCall, include: Boolean = true) {
         val features = call.arg<List<String>>("features").map { feature ->
             PrivacyStorageFeature.entries.first { it.name == feature }
         }
         call.arg<List<String>>("modes").forEach {
             val mode = getPrivacyMode(it)
-            mode.allowedStorageFeatures += features
+            (if (include) mode.allowedStorageFeatures else mode.forbiddenStorageFeatures) += features
         }
     }
 
-    private fun handlePrivacyExcludeStorageFeatures(call: MethodCall) {
-        val features = call.arg<List<String>>("features").map { feature ->
-            PrivacyStorageFeature.entries.first { it.name == feature }
-        }
+    private fun privacyChangeProperties(call: MethodCall, include: Boolean = true) {
+        val propertyNames = call.arg<List<String>>("propertyNames")
+        val eventNames = call.argument<List<String>>("eventNames") ?: listOf(Event.ANY)
+
         call.arg<List<String>>("modes").forEach {
             val mode = getPrivacyMode(it)
-            mode.allowedStorageFeatures -= features.toSet()
+            val propertyKeys = if (include) mode.allowedPropertyKeys else mode.forbiddenPropertyKeys
+
+            eventNames.forEach { eventName ->
+                propertyKeys
+                    .getOrPut(eventName) { mutableSetOf() }
+                    .addAll(propertyNames.map { name -> PropertyName(name) })
+            }
+        }
+    }
+
+    private fun privacyChangeEvents(call: MethodCall, include: Boolean = true) {
+        val eventNames = call.arg<List<String>>("eventNames")
+
+        call.arg<List<String>>("modes").forEach {
+            val mode = getPrivacyMode(it)
+            (if (include) mode.allowedEventNames else mode.forbiddenEventNames).addAll(eventNames)
         }
     }
 
@@ -183,6 +202,26 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             "no-consent" -> PrivacyMode.NO_CONSENT
             "no-storage" -> PrivacyMode.NO_STORAGE
             else -> error("Invalid privacy mode \"$name\"")
+        }
+
+        @JvmStatic
+        private fun updatePropertyKeys(
+            eventNames: List<String>,
+            propertyKeys: MutableMap<String, MutableSet<PropertyName>>,
+            propertyName: String
+        ) {
+            eventNames.forEach { eventName ->
+                var propertyNames = propertyKeys[eventName]
+                if (propertyNames == null) {
+                    propertyNames = mutableSetOf()
+                    propertyKeys[eventName] = propertyNames
+                }
+
+                val newPropertyName = PropertyName(propertyName)
+                if (!propertyNames.contains(newPropertyName)) {
+                    propertyNames.add(newPropertyName)
+                }
+            }
         }
     }
 }

@@ -75,7 +75,7 @@ class Event {
               for (var property in _properties)
                 property._name: {
                   "value": property._value,
-                  "forceType": property._forceType
+                  "forceType": property._forceType?.value
                 }
             }
           : null
@@ -131,6 +131,50 @@ class PianoAnalytics {
     _checkInit();
     await _channel.invokeMethod("privacyExcludeStorageFeatures", {
       "features": features.map((feature) => feature.value).toList(),
+      "modes": modes.map((mode) => mode.value).toList()
+    });
+  }
+
+  Future<void> privacyIncludeProperties(
+      {required List<String> propertyNames,
+      required List<PrivacyMode> modes,
+      List<String>? eventNames}) async {
+    _checkInit();
+    await _channel.invokeMethod("privacyIncludeProperties", {
+      "propertyNames": propertyNames,
+      "modes": modes.map((mode) => mode.value).toList(),
+      "eventNames": eventNames
+    });
+  }
+
+  Future<void> privacyExcludeProperties(
+      {required List<String> propertyNames,
+      required List<PrivacyMode> modes,
+      List<String>? eventNames}) async {
+    _checkInit();
+    await _channel.invokeMethod("privacyExcludeProperties", {
+      "propertyNames": propertyNames,
+      "modes": modes.map((mode) => mode.value).toList(),
+      "eventNames": eventNames
+    });
+  }
+
+  Future<void> privacyIncludeEvents(
+      {required List<String> eventNames,
+      required List<PrivacyMode> modes}) async {
+    _checkInit();
+    await _channel.invokeMethod("privacyIncludeEvents", {
+      "eventNames": eventNames,
+      "modes": modes.map((mode) => mode.value).toList()
+    });
+  }
+
+  Future<void> privacyExcludeEvents(
+      {required List<String> eventNames,
+      required List<PrivacyMode> modes}) async {
+    _checkInit();
+    await _channel.invokeMethod("privacyExcludeEvents", {
+      "eventNames": eventNames,
       "modes": modes.map((mode) => mode.value).toList()
     });
   }

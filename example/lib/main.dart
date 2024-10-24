@@ -59,10 +59,70 @@ class _MyAppState extends State<MyApp> {
                   child: const Text("Send")),
               FilledButton(
                   onPressed: () async {
-                    await _pianoAnalytics
-                        .privacyIncludeStorageFeatures(features: [PrivacyStorageFeature.crash, PrivacyStorageFeature.visitor], modes: [PrivacyMode.custom]);
+                    await _pianoAnalytics.privacyIncludeStorageFeatures(
+                        features: [
+                          PrivacyStorageFeature.crash,
+                          PrivacyStorageFeature.visitor
+                        ],
+                        modes: [
+                          PrivacyMode.custom
+                        ]);
                   },
-                  child: const Text("Include storage features"))
+                  child: const Text("Include storage features")),
+              FilledButton(
+                  onPressed: () async {
+                    await _pianoAnalytics.privacyExcludeStorageFeatures(
+                        features: [
+                          PrivacyStorageFeature.crash,
+                          PrivacyStorageFeature.visitor
+                        ],
+                        modes: [
+                          PrivacyMode.custom
+                        ]);
+                  },
+                  child: const Text("Exclude storage features")),
+              FilledButton(
+                  onPressed: () async {
+                    await _pianoAnalytics.privacyIncludeProperties(
+                        propertyNames: [
+                          "allowed_property_1",
+                          "allowed_property_2"
+                        ],
+                        modes: [
+                          PrivacyMode.custom
+                        ],
+                        eventNames: [
+                          "page.display",
+                          "click.action"
+                        ]);
+                  },
+                  child: const Text("Include properties")),
+              FilledButton(
+                  onPressed: () async {
+                    await _pianoAnalytics.privacyExcludeProperties(
+                        propertyNames: [
+                          "forbidden_property_1",
+                          "forbidden_property_2"
+                        ],
+                        modes: [
+                          PrivacyMode.custom
+                        ]);
+                  },
+                  child: const Text("Exclude properties")),
+              FilledButton(
+                  onPressed: () async {
+                    await _pianoAnalytics.privacyIncludeEvents(
+                        eventNames: ["page.display"],
+                        modes: [PrivacyMode.custom]);
+                  },
+                  child: const Text("Include events")),
+              FilledButton(
+                  onPressed: () async {
+                    await _pianoAnalytics.privacyExcludeEvents(
+                        eventNames: ["click.action"],
+                        modes: [PrivacyMode.custom]);
+                  },
+                  child: const Text("Exclude events"))
             ],
           ),
         ),
