@@ -3,32 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:piano_analytics/enums.dart';
 import 'package:piano_analytics/piano_analytics.dart';
 
-PianoAnalytics getPianoAnalytics(MethodChannel channel) {
-  return PianoAnalytics(
-      site: 123456789, collectDomain: "xxxxxxx.pa-cd.com", channel: channel);
-}
-
-var testFeatures = [
-  PrivacyStorageFeature.crash,
-  PrivacyStorageFeature.lifecycle,
-  PrivacyStorageFeature.privacy,
-  PrivacyStorageFeature.user,
-  PrivacyStorageFeature.visitor
-];
-
-var testModes = [
-  PrivacyMode.custom,
-  PrivacyMode.exempt,
-  PrivacyMode.noConsent,
-  PrivacyMode.noStorage,
-  PrivacyMode.optIn,
-  PrivacyMode.optOut
-];
-
-var testPropertyNames = ["test_property_1", "test_property_2"];
-
-var testEventNames = ["page.display", "click.action"];
-
 main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -36,6 +10,45 @@ main() {
       "piano_analytics", StandardMethodCodec(PianoAnalyticsMessageCodec()));
 
   MethodCall? call;
+
+  var testUserId = "WEB-192203AJ";
+  var testUserCategory = "premium";
+
+  var testFeatures = [
+    PrivacyStorageFeature.crash,
+    PrivacyStorageFeature.lifecycle,
+    PrivacyStorageFeature.privacy,
+    PrivacyStorageFeature.user,
+    PrivacyStorageFeature.visitor
+  ];
+
+  var testModes = [
+    PrivacyMode.custom,
+    PrivacyMode.exempt,
+    PrivacyMode.noConsent,
+    PrivacyMode.noStorage,
+    PrivacyMode.optIn,
+    PrivacyMode.optOut
+  ];
+
+  var testPropertyNames = ["property_1", "property_2"];
+
+  var testEventNames = ["page.display", "click.action"];
+
+  void setHandler({dynamic result}) {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+      call = methodCall;
+      return result;
+    });
+  }
+
+  Future<PianoAnalytics> getPianoAnalytics() async {
+    var pianoAnalytics = PianoAnalytics(
+        site: 123456789, collectDomain: "xxxxxxx.pa-cd.com", channel: channel);
+    await pianoAnalytics.init();
+    return pianoAnalytics;
+  }
 
   void checkItemsWithExpand<T>(
       dynamic actual, List<T> expected, Object? Function(T) expand) {
@@ -64,8 +77,7 @@ main() {
       Function(PianoAnalytics pa, List<PrivacyStorageFeature> features,
               List<PrivacyMode> modes)
           invoke) async {
-    var pianoAnalytics = getPianoAnalytics(channel);
-    await pianoAnalytics.init();
+    var pianoAnalytics = await getPianoAnalytics();
     await invoke(pianoAnalytics, testFeatures, testModes);
 
     expect(call?.method, method);
@@ -82,8 +94,7 @@ main() {
       Function(PianoAnalytics pa, List<String> propertyNames,
               List<PrivacyMode> modes, List<String>? eventNames)
           invoke) async {
-    var pianoAnalytics = getPianoAnalytics(channel);
-    await pianoAnalytics.init();
+    var pianoAnalytics = await getPianoAnalytics();
     await invoke(pianoAnalytics, testPropertyNames, testModes, testEventNames);
 
     expect(call?.method, method);
@@ -100,8 +111,7 @@ main() {
       Function(PianoAnalytics pa, List<String> eventNames,
               List<PrivacyMode> modes)
           invoke) async {
-    var pianoAnalytics = getPianoAnalytics(channel);
-    await pianoAnalytics.init();
+    var pianoAnalytics = await getPianoAnalytics();
     await invoke(pianoAnalytics, testEventNames, testModes);
 
     expect(call?.method, method);
@@ -113,11 +123,7 @@ main() {
   }
 
   setUp(() {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-      call = methodCall;
-      return null;
-    });
+    setHandler(result: null);
   });
 
   tearDown(() {
@@ -127,7 +133,15 @@ main() {
   });
 
   test("init", () async {
-    await getPianoAnalytics(channel).init();
+    var pianoAnalytics = PianoAnalytics(
+        site: 123456789,
+        collectDomain: "xxxxxxx.pa-cd.com",
+        channel: channel,
+        storageLifetimeVisitor: 395,
+        visitorStorageMode: VisitorStorageMode.fixed,
+        ignoreLimitedAdvertisingTracking: true,
+        visitorId: testUserId);
+    await pianoAnalytics.init();
 
     expect(call?.method, "init");
 
@@ -136,11 +150,14 @@ main() {
     expect(arguments["site"], 123456789);
     expect(arguments["collectDomain"], "xxxxxxx.pa-cd.com");
     expect(arguments["visitorIDType"], VisitorIDType.uuid.value);
+    expect(arguments["storageLifetimeVisitor"], 395);
+    expect(arguments["visitorStorageMode"], "fixed");
+    expect(arguments["ignoreLimitedAdvertisingTracking"], true);
+    expect(arguments["visitorId"], testUserId);
   });
 
   test("send", () async {
-    var pianoAnalytics = getPianoAnalytics(channel);
-    await pianoAnalytics.init();
+    var pianoAnalytics = await getPianoAnalytics();
     await pianoAnalytics.sendEvents(events: [
       Event(name: "page.display", properties: [
         Property.bool(name: "bool", value: true),
@@ -206,6 +223,57 @@ main() {
     testProperty(properties["stringArray"], ["a", "b", "c"]);
     testProperty(properties["stringArray_force"], ["a", "b", "c"],
         forceType: PropertyType.stringArray);
+  });
+
+  test("getUser", () async {
+    setHandler(result: {"id": testUserId, "category": testUserCategory});
+
+    var pianoAnalytics = await getPianoAnalytics();
+    var user = await pianoAnalytics.getUser();
+
+    expect(call?.method, "getUser");
+    expect(user?.id, testUserId);
+    expect(user?.category, testUserCategory);
+  });
+
+  test("setUser", () async {
+    var pianoAnalytics = await getPianoAnalytics();
+    await pianoAnalytics.setUser(
+        id: testUserId, category: testUserCategory, enableStorage: false);
+
+    expect(call?.method, "setUser");
+
+    var arguments = call?.arguments as Map<Object?, Object?>;
+    expect(arguments["id"], testUserId);
+    expect(arguments["category"], testUserCategory);
+    expect(arguments["enableStorage"], false);
+  });
+
+  test("getVisitorId", () async {
+    setHandler(result: testUserId);
+
+    var pianoAnalytics = await getPianoAnalytics();
+    var visitorId = await pianoAnalytics.getVisitorId();
+
+    expect(call?.method, "getVisitorId");
+    expect(visitorId, testUserId);
+  });
+
+  test("setVisitorId", () async {
+    var pianoAnalytics = await getPianoAnalytics();
+    await pianoAnalytics.setVisitorId(visitorId: testUserId);
+
+    expect(call?.method, "setVisitorId");
+
+    var arguments = call?.arguments as Map<Object?, Object?>;
+    expect(arguments["visitorId"], testUserId);
+  });
+
+  test("deleteUser", () async {
+    var pianoAnalytics = await getPianoAnalytics();
+    await pianoAnalytics.deleteUser();
+
+    expect(call?.method, "deleteUser");
   });
 
   test("privacyIncludeStorageFeatures", () async {

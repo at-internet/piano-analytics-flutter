@@ -83,6 +83,13 @@ class Event {
   }
 }
 
+class User {
+  final String id;
+  final String? category;
+
+  User({required this.id, this.category});
+}
+
 class PianoAnalytics {
   static final _pianoAnalyticsChannel = MethodChannel(
       "piano_analytics", StandardMethodCodec(PianoAnalyticsMessageCodec()));
@@ -96,11 +103,19 @@ class PianoAnalytics {
       {required int site,
       required String collectDomain,
       VisitorIDType visitorIDType = VisitorIDType.uuid,
+      int? storageLifetimeVisitor,
+      VisitorStorageMode? visitorStorageMode,
+      bool? ignoreLimitedAdvertisingTracking,
+      String? visitorId,
       MethodChannel? channel})
       : _parameters = {
           "site": site,
           "collectDomain": collectDomain,
-          "visitorIDType": visitorIDType.value
+          "visitorIDType": visitorIDType.value,
+          "storageLifetimeVisitor": storageLifetimeVisitor,
+          "visitorStorageMode": visitorStorageMode?.value,
+          "ignoreLimitedAdvertisingTracking": ignoreLimitedAdvertisingTracking,
+          "visitorId": visitorId
         },
         _channel = channel ?? _pianoAnalyticsChannel;
 
@@ -113,6 +128,38 @@ class PianoAnalytics {
     _checkInit();
     await _channel.invokeMethod(
         "send", {"events": events.map((event) => event.toMap()).toList()});
+  }
+
+  Future<User?> getUser() async {
+    _checkInit();
+    var user = await _channel.invokeMethod("getUser") as Map<Object?, Object?>?;
+    if (user == null) {
+      return null;
+    }
+    return User(
+        id: user["id"] as String, category: user["category"] as String?);
+  }
+
+  Future<void> setUser(
+      {required String id, String? category, bool enableStorage = true}) async {
+    _checkInit();
+    await _channel.invokeMethod("setUser",
+        {"id": id, "category": category, "enableStorage": enableStorage});
+  }
+
+  Future<void> deleteUser() async {
+    _checkInit();
+    await _channel.invokeMethod("deleteUser");
+  }
+
+  Future<String?> getVisitorId() async {
+    _checkInit();
+    return await _channel.invokeMethod("getVisitorId") as String?;
+  }
+
+  Future<void> setVisitorId({required String visitorId}) async {
+    _checkInit();
+    await _channel.invokeMethod("setVisitorId", {"visitorId": visitorId});
   }
 
   Future<void> privacyIncludeStorageFeatures(

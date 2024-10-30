@@ -1,10 +1,20 @@
 enum VisitorIDType {
   uuid("UUID"),
-  adid("ADID");
+  adid("ADID"),
+  custom("CUSTOM");
 
   final String value;
 
   const VisitorIDType(this.value);
+}
+
+enum VisitorStorageMode {
+  fixed("fixed"),
+  relative("relative");
+
+  final String value;
+
+  const VisitorStorageMode(this.value);
 }
 
 enum PropertyType {

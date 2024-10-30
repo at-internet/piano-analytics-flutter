@@ -17,7 +17,7 @@ This SDK makes the implementation of Piano Analytics as simple as possible, whil
 1. Add this to your pubspec.yaml file:
     ```yaml
     dependencies:
-      piano_analytics: ^1.0.0
+      piano_analytics: ^1.0.1
     ```
 
 2. Install the plugin using the command
@@ -37,7 +37,12 @@ Initialize PianoAnalytics with your site and collect domain in your application 
 
     final _pianoAnalytics = PianoAnalytics(
       site: 123456789,
-      collectDomain: "xxxxxxx.pa-cd.com"
+      collectDomain: "xxxxxxx.pa-cd.com",
+      visitorIDType: VisitorIDType.uuid,
+      storageLifetimeVisitor: 395,
+      visitorStorageMode: VisitorStorageMode.fixed,
+      ignoreLimitedAdvertisingTracking: true,
+      visitorId: "WEB-192203AJ"
     );
 
     @override
@@ -69,6 +74,118 @@ Initialize PianoAnalytics with your site and collect domain in your application 
       Property.stringArray(name: "stringArray", value: ["a", "b", "c"])
     ])
   ]);
+  ```
+
+## User
+You can get/set/delete a user
+
+### Get user
+  ```dart
+  var user = await _pianoAnalytics.getUser();
+  ```
+
+### Set user
+  ```dart
+  await _pianoAnalytics.setUser(
+    id: "WEB-192203AJ",
+    category: "premium",
+    enableStorage: false
+  );
+  ```
+
+### Delete user
+  ```dart
+  await _pianoAnalytics.deleteUser();
+  ```
+
+## Visitor ID
+You can get/set visitor ID (*only for `VisitorIDType.custom`*)
+
+### Get visitor ID
+  ```dart
+  var user = await _pianoAnalytics.getVisitorId();
+  ```
+
+### Set visitor ID
+  ```dart
+  await _pianoAnalytics.setVisitorId(
+    visitorId: "WEB-192203AJ"
+  );
+  ```
+
+## Privacy
+You can change privacy parameters
+
+### Include storage features
+  ```dart
+   await _pianoAnalytics.privacyIncludeStorageFeatures(
+    features: [
+      PrivacyStorageFeature.crash,
+      PrivacyStorageFeature.visitor
+    ],
+    modes: [
+      PrivacyMode.custom
+    ]
+  );
+  ```
+
+### Exclude storage features
+  ```dart
+  await _pianoAnalytics.privacyExcludeStorageFeatures(
+    features: [
+      PrivacyStorageFeature.crash,
+      PrivacyStorageFeature.visitor
+    ],
+    modes: [
+      PrivacyMode.custom
+    ]
+  );
+  ```
+
+### Include properties
+  ```dart
+  await _pianoAnalytics.privacyIncludeProperties(
+    propertyNames: [
+      "allowed_property_1",
+      "allowed_property_2"
+    ],
+    modes: [
+      PrivacyMode.custom
+    ],
+    eventNames: [
+      "page.display",
+      "click.action"
+    ]
+  );
+  ```
+
+### Exclude properties
+  ```dart
+  await _pianoAnalytics.privacyExcludeProperties(
+    propertyNames: [
+      "forbidden_property_1",
+      "forbidden_property_2"
+    ],
+    modes: [
+      PrivacyMode.custom
+    ]
+  );
+  ```
+
+### Include events
+  ```dart
+  await _pianoAnalytics.privacyIncludeEvents(
+    eventNames: ["page.display"],
+    modes: [PrivacyMode.custom]
+  );
+  ```
+
+### Exclude events
+  ```dart
+  await _pianoAnalytics.privacyExcludeEvents(
+    eventNames: ["click.action"],
+    modes: [PrivacyMode.custom]
+  );
   ```
 
 ## Consents

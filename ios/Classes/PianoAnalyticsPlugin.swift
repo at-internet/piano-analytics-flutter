@@ -40,11 +40,28 @@ public class PianoAnalyticsPlugin: NSObject, FlutterPlugin {
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         do {
+            var skipResult = false
             switch call.method {
+            // Main
             case "init":
                 try handleInit(call)
             case "send":
                 try handleSend(call)
+            // User
+            case "getUser":
+                skipResult = true
+                try handleGetUser(result)
+            case "setUser":
+                try handleSetUser(call)
+            case "deleteUser":
+                PianoAnalytics.shared.deleteUser()
+            // Visitor
+            case "getVisitorId":
+                skipResult = true
+                handleGetVisitorId(result)
+            case "setVisitorId":
+                try handleSetVisitorId(call)
+            // Privacy
             case "privacyIncludeStorageFeatures":
                 try privacyChangeStorageFeatures(call)
             case "privacyExcludeStorageFeatures":
@@ -60,7 +77,9 @@ public class PianoAnalyticsPlugin: NSObject, FlutterPlugin {
             default:
                 result(FlutterMethodNotImplemented)
             }
-            result(nil)
+            if !skipResult {
+                result(nil)
+            }
         } catch let error as PluginError {
             switch error {
             case .message(let message): result(FlutterError.from(call, message))
@@ -73,14 +92,30 @@ public class PianoAnalyticsPlugin: NSObject, FlutterPlugin {
 
     private func handleInit(_ call: FlutterMethodCall) throws {
         let arguments = try getArguments(call)
+        let visitorIdType = VisitorIdType.from(try getArgument(call, arguments, "visitorIDType"))
         
-        PianoAnalytics.shared.setConfiguration(
-            ConfigurationBuilder()
-                .withSite(try getArgument(call, arguments, "site"))
-                .withCollectDomain(try getArgument(call, arguments, "collectDomain"))
-                .withVisitorIdType(VisitorIdType.from(try getArgument(call, arguments, "visitorIDType")).rawValue)
-                .build()
-        )
+        var configurationBuilder = ConfigurationBuilder()
+            .withSite(try getArgument(call, arguments, "site"))
+            .withCollectDomain(try getArgument(call, arguments, "collectDomain"))
+            .withVisitorIdType(visitorIdType.rawValue)
+        
+        if let storageLifetimeVisitor = arguments["storageLifetimeVisitor"] as? Int {
+            _ = configurationBuilder.withStorageLifetimeVisitor(storageLifetimeVisitor)
+        }
+        
+        if let visitorStorageMode = arguments["visitorStorageMode"] as? String {
+            _ = configurationBuilder.withVisitorStorageMode(try PianoAnalyticsPlugin.getVisitorStorageMode(visitorStorageMode))
+        }
+        
+        if let ignoreLimitedAdvertisingTracking = arguments["ignoreLimitedAdvertisingTracking"] as? Bool {
+            _ = configurationBuilder.enableIgnoreLimitedAdTracking(ignoreLimitedAdvertisingTracking)
+        }
+        
+        PianoAnalytics.shared.setConfiguration(configurationBuilder.build())
+        
+        if let visitorId = arguments["visitorId"] as? String, visitorIdType == .Custom {
+            PianoAnalytics.shared.setVisitorId(visitorId)
+        }
     }
 
     private func handleSend(_ call: FlutterMethodCall) throws {
@@ -104,6 +139,47 @@ public class PianoAnalyticsPlugin: NSObject, FlutterPlugin {
                 return Event(name, properties: Set(properties ?? []))
             }
         )
+    }
+    
+    private func handleGetUser(_ result: @escaping FlutterResult) throws {
+        PianoAnalytics.shared.getUser { user in
+            guard let user else {
+                result(nil)
+                return
+            }
+            
+            result([
+                "id": user.id,
+                "category": user.category
+            ])
+        }
+    }
+    
+    private func handleSetUser(_ call: FlutterMethodCall) throws {
+        let arguments = try getArguments(call)
+        
+        PianoAnalytics.shared.setUser(
+            try getArgument(call, arguments, "id"),
+            category: arguments["category"] as? String,
+            enableStorage: arguments["enableStorage"] as? Bool ?? true
+        )
+    }
+    
+    private func handleGetVisitorId(_ result: @escaping FlutterResult) {
+        PianoAnalytics.shared.getVisitorId { visitorId in
+            result(visitorId)
+        }
+    }
+    
+    private func handleSetVisitorId(_ call: FlutterMethodCall) throws {
+        let arguments = try getArguments(call)
+        let visitorId: String = try getArgument(call, arguments, "visitorId")
+        
+        PianoAnalytics.shared.getConfiguration(.VisitorIdType) { type in
+            if type == VisitorIdType.Custom.rawValue {
+                PianoAnalytics.shared.setVisitorId(visitorId)
+            }
+        }
     }
     
     private func privacyChangeStorageFeatures(_ call: FlutterMethodCall, _ include: Bool = true) throws {
@@ -189,6 +265,17 @@ public class PianoAnalyticsPlugin: NSObject, FlutterPlugin {
             throw PluginError.message("Invalid privacy mode \"\(name)\"")
         }
     }
+    
+    private static func getVisitorStorageMode(_ name: String) throws -> String {
+        switch name {
+        case "fixed":
+            return "fixed"
+        case "relative":
+            return "relative"
+        default:
+            throw PluginError.message("Invalid visitor storage mode \"\(name)\"")
+        }
+    }
 }
 
 fileprivate extension VisitorIdType {
@@ -196,6 +283,7 @@ fileprivate extension VisitorIdType {
     static func from(_ name: String) -> Self {
         switch name {
         case "ADID": return VisitorIdType.IDFA
+        case "CUSTOM": return VisitorIdType.Custom
         default: return VisitorIdType.UUID
         }
     }
