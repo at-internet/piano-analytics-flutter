@@ -75,25 +75,16 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onMethodCall(call: MethodCall, result: Result) {
         try {
-            var skipResult = false
-            when (call.method) {
+            val methodResult: Any? = when (call.method) {
                 // Main
                 "init" -> handleInit(call)
                 "send" -> handleSend(call)
                 // User
-                "getUser" -> {
-                    skipResult = true
-                    handleGetUser(result)
-                }
-
+                "getUser" -> handleGetUser()
                 "setUser" -> handleSetUser(call)
                 "deleteUser" -> PianoAnalytics.getInstance().userStorage.currentUser = null
                 // Visitor
-                "getVisitorId" -> {
-                    skipResult = true
-                    handleGetVisitorId(result)
-                }
-
+                "getVisitorId" -> handleGetVisitorId()
                 "setVisitorId" -> handleSetVisitorId(call)
                 // Privacy
                 "privacyIncludeStorageFeatures" -> privacyChangeStorageFeatures(call)
@@ -104,10 +95,7 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 "privacyExcludeEvents" -> privacyChangeEvents(call, false)
                 else -> error("Unknown method")
             }
-
-            if (!skipResult) {
-                result.success(null)
-            }
+            result.success(methodResult.takeUnless { it is Unit })
         } catch (e: Throwable) {
             result.error(call.method, e.message, null)
         }
@@ -163,18 +151,13 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         PianoAnalytics.getInstance().sendEvents(*events)
     }
 
-    private fun handleGetUser(result: Result) {
+    private fun handleGetUser(): Map<String, Any?>? =
         PianoAnalytics.getInstance().userStorage.currentUser?.let {
-            result.success(
-                mapOf(
-                    "id" to it.id,
-                    "category" to it.category
-                )
+            mapOf(
+                "id" to it.id,
+                "category" to it.category
             )
-            return
         }
-        result.success(null)
-    }
 
     private fun handleSetUser(call: MethodCall) {
         PianoAnalytics.getInstance().userStorage.currentUser = User(
@@ -184,15 +167,13 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         )
     }
 
-    private fun handleGetVisitorId(result: Result) {
-        val pianoAnalytics = PianoAnalytics.getInstance()
-        result.success(
+    private fun handleGetVisitorId(): String? =
+        PianoAnalytics.getInstance().let {
             if (visitorIDType == VisitorIDType.CUSTOM)
-                pianoAnalytics.customVisitorId
+                it.customVisitorId
             else
-                pianoAnalytics.visitorId
-        )
-    }
+                it.visitorId
+        }
 
     private fun handleSetVisitorId(call: MethodCall) {
         PianoAnalytics.getInstance().customVisitorId = call.arg("visitorId")

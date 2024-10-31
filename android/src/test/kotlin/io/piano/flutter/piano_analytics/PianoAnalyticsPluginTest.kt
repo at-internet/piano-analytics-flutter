@@ -207,6 +207,8 @@ internal class PianoAnalyticsPluginTest : BasePluginTest() {
 
     @Test
     fun `Check getVisitorId`() {
+        every { PianoAnalytics.Companion.init(any(), any(), any(), any()) } returns mockk()
+
         val pianoAnalytics: PianoAnalytics = mockk()
         every { PianoAnalytics.Companion.getInstance() } returns pianoAnalytics
         every { pianoAnalytics.customVisitorId } returns "WEB-192203AJ"
@@ -216,12 +218,26 @@ internal class PianoAnalyticsPluginTest : BasePluginTest() {
         val slot = slot<String>()
         every { result.success(capture(slot)) } returns Unit
 
-        call("getVisitorId", null, result)
+        val plugin = PianoAnalyticsPlugin()
+
+        call(
+            "init", mapOf(
+                "site" to 123456789,
+                "collectDomain" to "xxxxxxx.pa-cd.com",
+                "visitorIDType" to "CUSTOM"
+            ), null
+        ) { plugin }
+        call("getVisitorId", null, result) { plugin }
         assertEquals("WEB-192203AJ", slot.captured)
 
-        every { pianoAnalytics.customVisitorId } returns null
-
-        call("getVisitorId", null, result)
+        call(
+            "init", mapOf(
+                "site" to 123456789,
+                "collectDomain" to "xxxxxxx.pa-cd.com",
+                "visitorIDType" to "UUID"
+            ), null
+        ) { plugin }
+        call("getVisitorId", null, result) { plugin }
         assertEquals("WEB-192203AJ2", slot.captured)
     }
 
