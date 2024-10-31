@@ -33,16 +33,21 @@ internal class PianoAnalyticsPluginTest : BasePluginTest() {
 
     @Test
     fun `Check init`() {
-        every { PianoAnalytics.Companion.init(any(), any(), any(), any()) } returns mockk()
+        val pianoAnalytics: PianoAnalytics = mockk()
+        every { PianoAnalytics.Companion.init(any(), any(), any(), any()) } returns pianoAnalytics
+
+        val customVisitorIdSlot = slot<String>()
+        every { pianoAnalytics.customVisitorId = capture(customVisitorIdSlot) } answers {}
 
         call(
             "init", mapOf(
                 "site" to 123456789,
                 "collectDomain" to "xxxxxxx.pa-cd.com",
-                "visitorIDType" to "UUID",
+                "visitorIDType" to "CUSTOM",
                 "visitorStorageLifetime" to 395,
                 "visitorStorageMode" to "fixed",
-                "ignoreLimitedAdvertisingTracking" to true
+                "ignoreLimitedAdvertisingTracking" to true,
+                "visitorId" to "WEB-192203AJ"
             )
         )
 
@@ -52,10 +57,11 @@ internal class PianoAnalyticsPluginTest : BasePluginTest() {
         val configuration = slot.captured
         assertEquals(123456789, configuration.site)
         assertEquals("xxxxxxx.pa-cd.com", configuration.collectDomain)
-        assertEquals(VisitorIDType.UUID, configuration.visitorIDType)
+        assertEquals(VisitorIDType.CUSTOM, configuration.visitorIDType)
         assertEquals(395, configuration.visitorStorageLifetime)
         assertEquals(VisitorStorageMode.FIXED, configuration.visitorStorageMode)
         assertEquals(true, configuration.ignoreLimitedAdTracking)
+        assertEquals("WEB-192203AJ", customVisitorIdSlot.captured)
     }
 
     @Test

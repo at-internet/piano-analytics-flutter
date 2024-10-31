@@ -103,7 +103,7 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private fun handleInit(call: MethodCall) {
         visitorIDType = getVisitorIDType(call.arg("visitorIDType"))
-        PianoAnalytics.init(
+        val pianoAnalytics = PianoAnalytics.init(
             context = context.get() ?: error("Activity not attached"),
             configuration = Configuration.Builder(
                 site = call.arg("site"),
@@ -120,7 +120,7 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
         if (visitorIDType == VisitorIDType.CUSTOM) {
             call.argument<String>("visitorId")?.let {
-                PianoAnalytics.getInstance().customVisitorId = it
+                pianoAnalytics.customVisitorId = it
             }
         }
     }
