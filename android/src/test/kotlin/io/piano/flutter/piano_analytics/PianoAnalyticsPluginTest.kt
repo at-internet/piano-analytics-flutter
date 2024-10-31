@@ -1,16 +1,13 @@
 package io.piano.flutter.piano_analytics
 
-import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.slot
-import io.mockk.spyk
 import io.mockk.verify
 import io.piano.android.analytics.Configuration
 import io.piano.android.analytics.PianoAnalytics
-import io.piano.android.analytics.UserStorage
 import io.piano.android.analytics.model.Event
 import io.piano.android.analytics.model.PrivacyMode
 import io.piano.android.analytics.model.PrivacyStorageFeature
