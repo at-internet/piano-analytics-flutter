@@ -113,12 +113,13 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     private fun handleInit(call: MethodCall) {
+        val visitorIDType = getVisitorIDType(call.arg("visitorIDType"))
         PianoAnalytics.init(
             context = context.get() ?: error("Activity not attached"),
             configuration = Configuration.Builder(
                 site = call.arg("site"),
                 collectDomain = call.arg("collectDomain"),
-                visitorIDType = getVisitorIDType(call.arg("visitorIDType")),
+                visitorIDType = visitorIDType,
                 visitorStorageLifetime = call.argument<Int>("storageLifetimeVisitor")
                     ?: Configuration.DEFAULT_VISITOR_STORAGE_LIFETIME,
                 visitorStorageMode = getVisitorStorageMode(call.argument("visitorStorageMode")),
@@ -127,9 +128,11 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             ).build(),
             pianoConsents = getPianoConsents()
         )
-        val visitorId = call.argument<String>("visitorId")
-        if (visitorId != null) {
-            PianoAnalytics.getInstance().customVisitorId = visitorId
+
+        if (visitorIDType == VisitorIDType.CUSTOM) {
+            call.argument<String>("visitorId")?.let {
+                PianoAnalytics.getInstance().customVisitorId = it
+            }
         }
     }
 
@@ -160,12 +163,11 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     private fun handleGetUser(result: Result) {
-        val user = PianoAnalytics.getInstance().userStorage.currentUser
-        if (user != null) {
+        PianoAnalytics.getInstance().userStorage.currentUser?.let {
             result.success(
                 mapOf(
-                    "id" to user.id,
-                    "category" to user.category
+                    "id" to it.id,
+                    "category" to it.category
                 )
             )
             return
