@@ -40,6 +40,7 @@ private class Codec : StandardMessageCodec() {
 class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private lateinit var channel: MethodChannel
+    private lateinit var visitorIDType: VisitorIDType
 
     private var context: WeakReference<Context?> = WeakReference(null)
 
@@ -113,7 +114,7 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     private fun handleInit(call: MethodCall) {
-        val visitorIDType = getVisitorIDType(call.arg("visitorIDType"))
+        visitorIDType = getVisitorIDType(call.arg("visitorIDType"))
         PianoAnalytics.init(
             context = context.get() ?: error("Activity not attached"),
             configuration = Configuration.Builder(
@@ -185,7 +186,12 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private fun handleGetVisitorId(result: Result) {
         val pianoAnalytics = PianoAnalytics.getInstance()
-        result.success(pianoAnalytics.customVisitorId ?: pianoAnalytics.visitorId)
+        result.success(
+            if (visitorIDType == VisitorIDType.CUSTOM)
+                pianoAnalytics.customVisitorId
+            else
+                pianoAnalytics.visitorId
+        )
     }
 
     private fun handleSetVisitorId(call: MethodCall) {
