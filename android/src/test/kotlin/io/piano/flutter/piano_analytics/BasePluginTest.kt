@@ -12,19 +12,19 @@ import io.mockk.mockk
 
 internal open class BasePluginTest {
 
-    protected fun <T> call(method: String, parameters: Map<String, Any>?, factory: () -> T)
+    protected fun <T> call(method: String, parameters: Map<String, Any>?, result: MethodChannel.Result?, factory: () -> T)
         where T: FlutterPlugin, T: MethodCallHandler, T: ActivityAware {
         val plugin = factory()
-
-        val call = MethodCall(method, parameters)
-
-        val result: MethodChannel.Result = mockk()
-        every { result.success(any()) } returns Unit
 
         val activityBinding: ActivityPluginBinding = mockk()
         every { activityBinding.activity } returns Activity()
         plugin.onAttachedToActivity(activityBinding)
 
-        plugin.onMethodCall(call, result)
+        plugin.onMethodCall(
+            MethodCall(method, parameters),
+            result ?: mockk<MethodChannel.Result>().also { r ->
+                every { r.success(any()) } returns Unit
+            }
+        )
     }
 }
