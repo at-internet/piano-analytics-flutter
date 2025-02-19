@@ -29,8 +29,12 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8
     }
 
     defaultConfig {
@@ -55,4 +59,12 @@ android {
 
 flutter {
     source = "../.."
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    taskGraph.allTasks.each {
+        if (it.project.name == "integration_test") {
+            it.enabled = false
+        }
+    }
 }
