@@ -11,6 +11,7 @@ import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.common.StandardMethodCodec
 import io.piano.android.analytics.Configuration
+import io.piano.android.analytics.CustomHttpDataProvider
 import io.piano.android.analytics.PianoAnalytics
 import io.piano.android.analytics.model.Event
 import io.piano.android.analytics.model.PrivacyMode
@@ -37,7 +38,18 @@ private class Codec : StandardMessageCodec() {
     }
 }
 
-class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
+class HttpDataProvider : CustomHttpDataProvider {
+
+    val headers = mutableMapOf<String, String>()
+    var parameters = mutableMapOf<String, String>()
+
+    override fun headers() = headers
+    override fun parameters() = parameters
+}
+
+class PianoAnalyticsPlugin(
+    private val httpDataProvider: HttpDataProvider = HttpDataProvider()
+) : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private lateinit var channel: MethodChannel
     private lateinit var visitorIDType: VisitorIDType
@@ -78,6 +90,8 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             val methodResult: Any? = when (call.method) {
                 // Main
                 "init" -> handleInit(call)
+                "setHeader" -> handleSetHeader(call)
+                "setQuery" -> handleSetQuery(call)
                 "send" -> handleSend(call)
                 // User
                 "getUser" -> handleGetUser()
@@ -103,6 +117,12 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private fun handleInit(call: MethodCall) {
         visitorIDType = getVisitorIDType(call.arg("visitorIDType"))
+        call.argument<Map<String, String>>("headers")?.let {
+            httpDataProvider.headers.putAll(it)
+        }
+        call.argument<Map<String, String>>("query")?.let {
+            httpDataProvider.parameters.putAll(it)
+        }
         val pianoAnalytics = PianoAnalytics.init(
             context = context.get() ?: error("Activity not attached"),
             configuration = Configuration.Builder(
@@ -113,15 +133,34 @@ class PianoAnalyticsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     ?: Configuration.DEFAULT_VISITOR_STORAGE_LIFETIME,
                 visitorStorageMode = getVisitorStorageMode(call.argument("visitorStorageMode")),
                 ignoreLimitedAdTracking = call.argument<Boolean>("ignoreLimitedAdvertisingTracking")
-                    ?: false
+                    ?: false,
             ).build(),
-            pianoConsents = getPianoConsents()
+            pianoConsents = getPianoConsents(),
+            customHttpDataProvider = httpDataProvider
         )
 
         if (visitorIDType == VisitorIDType.CUSTOM) {
             call.argument<String>("visitorId")?.let {
                 pianoAnalytics.customVisitorId = it
             }
+        }
+    }
+
+    private fun handleSetHeader(call: MethodCall) {
+        val value = call.argument<String>("value")
+        if (value != null) {
+            httpDataProvider.headers[call.arg("key")] = value
+        } else {
+            httpDataProvider.headers.remove(call.arg("key"))
+        }
+    }
+
+    private fun handleSetQuery(call: MethodCall) {
+        val value = call.argument<String>("value")
+        if (value != null) {
+            httpDataProvider.parameters[call.arg("key")] = value
+        } else {
+            httpDataProvider.parameters.remove(call.arg("key"))
         }
     }
 

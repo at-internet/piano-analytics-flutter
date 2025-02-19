@@ -156,6 +156,44 @@ main() {
     expect(arguments["visitorId"], testUserId);
   });
 
+  test("setHeader", () async {
+    var pianoAnalytics = await getPianoAnalytics();
+    pianoAnalytics.setHeader(key: "X-User-Id", value: testUserId);
+
+    expect(call?.method, "setHeader");
+
+    var arguments = call?.arguments as Map<Object?, Object?>;
+    expect(arguments["key"], "X-User-Id");
+    expect(arguments["value"], testUserId);
+
+    pianoAnalytics.setHeader(key: "X-User-Id", value: null);
+
+    expect(call?.method, "setHeader");
+
+    arguments = call?.arguments as Map<Object?, Object?>;
+    expect(arguments["key"], "X-User-Id");
+    expect(arguments["value"], null);
+  });
+
+  test("setQuery", () async {
+    var pianoAnalytics = await getPianoAnalytics();
+    pianoAnalytics.setQuery(key: "user_id", value: testUserId);
+
+    expect(call?.method, "setQuery");
+
+    var arguments = call?.arguments as Map<Object?, Object?>;
+    expect(arguments["key"], "user_id");
+    expect(arguments["value"], testUserId);
+
+    pianoAnalytics.setQuery(key: "user_id", value: null);
+
+    expect(call?.method, "setQuery");
+
+    arguments = call?.arguments as Map<Object?, Object?>;
+    expect(arguments["key"], "user_id");
+    expect(arguments["value"], null);
+  });
+
   test("send", () async {
     var pianoAnalytics = await getPianoAnalytics();
     await pianoAnalytics.sendEvents(events: [

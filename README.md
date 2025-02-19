@@ -42,7 +42,9 @@ Initialize PianoAnalytics with your site and collect domain in your application 
       storageLifetimeVisitor: 395,
       visitorStorageMode: VisitorStorageMode.fixed,
       ignoreLimitedAdvertisingTracking: true,
-      visitorId: "WEB-192203AJ"
+      visitorId: "WEB-192203AJ",
+      headers: {"X-Request-Id": "123456789"},
+      query: {"request_id": "123456789"}
     );
 
     @override
@@ -58,6 +60,18 @@ Initialize PianoAnalytics with your site and collect domain in your application 
     ...
   }
   ```
+
+### Set HTTP parameters
+
+Headers:
+```dart
+await _pianoAnalytics.setHeader(key: "X-User-Id", value: "WEB-192203AJ")
+```
+
+Query string parameters:
+```dart
+await _pianoAnalytics.setQuery(key: "user_id", value: "WEB-192203AJ")
+```
 
 ### Send events
   ```dart

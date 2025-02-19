@@ -7,7 +7,7 @@ allprojects {
 
 rootProject.layout.buildDirectory = "../build"
 subprojects {
-    project.layout.buildDirectory = "${rootProject.buildDir}/${project.name}"
+    project.layout.buildDirectory = "${getLayout().getBuildDirectory()}/${project.name}"
 }
 subprojects {
     project.evaluationDependsOn(":app")

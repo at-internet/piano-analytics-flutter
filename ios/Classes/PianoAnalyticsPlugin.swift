@@ -27,6 +27,11 @@ fileprivate class ReaderWriter: FlutterStandardReaderWriter {
     }
 }
 
+fileprivate class HTTPProvider: CustomHTTPProvider {
+    var headers: [String : String] = [:]
+    var query: [String : String] = [:]
+}
+
 public class PianoAnalyticsPlugin: NSObject, FlutterPlugin {
     
     public static func register(with registrar: FlutterPluginRegistrar) {
@@ -37,6 +42,16 @@ public class PianoAnalyticsPlugin: NSObject, FlutterPlugin {
         let instance = PianoAnalyticsPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
+    
+    //private var pianoAnalytics: PianoAnalytics
+    
+    private var httpProvider = HTTPProvider()
+        
+    public override init() {
+        var extendedConfiguration = PA.ExtendedConfiguration()
+        extendedConfiguration.httpProvider = httpProvider
+        _ = PianoAnalytics.sharedWithExtendedConfiguration(extendedConfiguration)
+    }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         do {
@@ -45,6 +60,10 @@ public class PianoAnalyticsPlugin: NSObject, FlutterPlugin {
             // Main
             case "init":
                 try handleInit(call)
+            case "setHeader":
+                try handleSetHeader(call)
+            case "setQuery":
+                try handleSetQuery(call)
             case "send":
                 try handleSend(call)
             // User
@@ -111,10 +130,42 @@ public class PianoAnalyticsPlugin: NSObject, FlutterPlugin {
             _ = configurationBuilder.enableIgnoreLimitedAdTracking(ignoreLimitedAdvertisingTracking)
         }
         
+        if let headers = arguments["headers"] as? [String:String] {
+            httpProvider.headers.merge(headers) { $1 }
+        }
+        
+        if let query = arguments["query"] as? [String:String] {
+            httpProvider.query.merge(query) { $1 }
+        }
+        
         PianoAnalytics.shared.setConfiguration(configurationBuilder.build())
         
         if let visitorId = arguments["visitorId"] as? String, visitorIdType == .Custom {
             PianoAnalytics.shared.setVisitorId(visitorId)
+        }
+    }
+    
+    private func handleSetHeader(_ call: FlutterMethodCall) throws {
+        let arguments = try getArguments(call)
+        let key: String = try getArgument(call, arguments, "key")
+        let value: String? = arguments["value"] as? String
+        
+        if let value {
+            httpProvider.headers[key] = value
+        } else {
+            httpProvider.headers.removeValue(forKey: key)
+        }
+    }
+    
+    private func handleSetQuery(_ call: FlutterMethodCall) throws {
+        let arguments = try getArguments(call)
+        let key: String = try getArgument(call, arguments, "key")
+        let value: String? = arguments["value"] as? String
+        
+        if let value {
+            httpProvider.query[key] = value
+        } else {
+            httpProvider.query.removeValue(forKey: key)
         }
     }
 
