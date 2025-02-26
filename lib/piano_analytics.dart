@@ -107,6 +107,8 @@ class PianoAnalytics {
       VisitorStorageMode? visitorStorageMode,
       bool? ignoreLimitedAdvertisingTracking,
       String? visitorId,
+      Map<String,String>? headers,
+      Map<String,String>? query,
       MethodChannel? channel})
       : _parameters = {
           "site": site,
@@ -115,13 +117,27 @@ class PianoAnalytics {
           "storageLifetimeVisitor": storageLifetimeVisitor,
           "visitorStorageMode": visitorStorageMode?.value,
           "ignoreLimitedAdvertisingTracking": ignoreLimitedAdvertisingTracking,
-          "visitorId": visitorId
+          "visitorId": visitorId,
+          "headers": headers,
+          "query": query
         },
         _channel = channel ?? _pianoAnalyticsChannel;
 
   Future<void> init() async {
     await _channel.invokeMethod<void>("init", _parameters);
     _initialized = true;
+  }
+
+  Future<void> setHeader(
+      {required String key, required String? value}) async {
+    await _channel.invokeMethod("setHeader",
+        {"key": key, "value": value});
+  }
+
+  Future<void> setQuery(
+      {required String key, required String? value}) async {
+    await _channel.invokeMethod("setQuery",
+        {"key": key, "value": value});
   }
 
   Future<void> sendEvents({required List<Event> events}) async {

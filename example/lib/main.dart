@@ -22,7 +22,9 @@ class _MyAppState extends State<MyApp> {
       storageLifetimeVisitor: 395,
       visitorStorageMode: VisitorStorageMode.fixed,
       ignoreLimitedAdvertisingTracking: true,
-      visitorId: "WEB-192203AJ");
+      visitorId: "WEB-192203AJ",
+      headers: {"X-Request-Id": "123456789"},
+      query: {"request_id": "123456789"});
 
   @override
   void initState() {
@@ -42,8 +44,37 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Piano analytics'),
         ),
         body: Center(
-          child: Column(
+          child: SingleChildScrollView(
+            child: Column(
             children: [
+              // Set header
+              FilledButton(
+                  onPressed: () async {
+                    await _pianoAnalytics.setHeader(
+                        key: "X-User-Id",
+                        value: "WEB-192203AJ");
+                  },
+                  child: const Text("Set header")),
+              // Remove header
+              FilledButton(
+                  onPressed: () async {
+                    await _pianoAnalytics.setHeader(key: "X-User-Id", value: null);
+                  },
+                  child: const Text("Remove header")),
+              // Set query
+              FilledButton(
+                  onPressed: () async {
+                    await _pianoAnalytics.setQuery(
+                        key: "user_id",
+                        value: "WEB-192203AJ");
+                  },
+                  child: const Text("Set query")),
+              // Remove query
+              FilledButton(
+                  onPressed: () async {
+                    await _pianoAnalytics.setQuery(key: "user_id", value: null);
+                  },
+                  child: const Text("Remove query")),
               // Send events
               FilledButton(
                   onPressed: () async {
@@ -209,6 +240,7 @@ class _MyAppState extends State<MyApp> {
                   child: const Text("Exclude events (privcy)"))
             ],
           ),
+          )
         ),
       ),
     );

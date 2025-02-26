@@ -20,6 +20,7 @@ import java.util.Date
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 internal class PianoAnalyticsPluginTest : BasePluginTest() {
 
@@ -31,25 +32,30 @@ internal class PianoAnalyticsPluginTest : BasePluginTest() {
     @Test
     fun `Check init`() {
         val pianoAnalytics: PianoAnalytics = mockk()
-        every { PianoAnalytics.Companion.init(any(), any(), any(), any()) } returns pianoAnalytics
+        every { PianoAnalytics.Companion.init(any(), any(), any(), any(), any()) } returns pianoAnalytics
 
         val customVisitorIdSlot = slot<String>()
         every { pianoAnalytics.customVisitorId = capture(customVisitorIdSlot) } answers {}
 
+        val httpDataProvider = HttpDataProvider()
         call(
-            "init", mapOf(
+            "init",
+            mapOf(
                 "site" to 123456789,
                 "collectDomain" to "xxxxxxx.pa-cd.com",
                 "visitorIDType" to "CUSTOM",
                 "visitorStorageLifetime" to 395,
                 "visitorStorageMode" to "fixed",
                 "ignoreLimitedAdvertisingTracking" to true,
-                "visitorId" to "WEB-192203AJ"
-            )
-        )
+                "visitorId" to "WEB-192203AJ",
+                "headers" to mapOf("X-Request-ID" to "123456789"),
+                "query" to mapOf("request_id" to "123456789")
+            ),
+            null
+        ) { PianoAnalyticsPlugin(httpDataProvider) }
 
         val slot = slot<Configuration>()
-        verify { PianoAnalytics.init(any(), capture(slot), any(), any()) }
+        verify { PianoAnalytics.init(any(), capture(slot), any(), any(), any()) }
 
         val configuration = slot.captured
         assertEquals(123456789, configuration.site)
@@ -58,7 +64,8 @@ internal class PianoAnalyticsPluginTest : BasePluginTest() {
         assertEquals(395, configuration.visitorStorageLifetime)
         assertEquals(VisitorStorageMode.FIXED, configuration.visitorStorageMode)
         assertEquals(true, configuration.ignoreLimitedAdTracking)
-        assertEquals("WEB-192203AJ", customVisitorIdSlot.captured)
+        assertEquals("123456789", httpDataProvider.headers["X-Request-ID"])
+        assertEquals("123456789", httpDataProvider.parameters["request_id"])
     }
 
     @Test
@@ -156,6 +163,56 @@ internal class PianoAnalyticsPluginTest : BasePluginTest() {
     }
 
     @Test
+    fun `Check setHeader`() {
+        val  httpDataProvider = HttpDataProvider()
+        call(
+            "setHeader",
+            mapOf(
+                "key" to "X-User-Id",
+                "value" to "WEB-192203AJ"
+            ),
+            null
+        ) { PianoAnalyticsPlugin(httpDataProvider) }
+
+        assertEquals("WEB-192203AJ", httpDataProvider.headers["X-User-Id"])
+
+        call(
+            "setHeader",
+            mapOf(
+                "key" to "X-User-Id"
+            ),
+            null
+        ) { PianoAnalyticsPlugin(httpDataProvider) }
+
+        assertNull(httpDataProvider.headers["X-User-Id"])
+    }
+
+    @Test
+    fun `Check setQuery`() {
+        val  httpDataProvider = HttpDataProvider()
+        call(
+            "setQuery",
+            mapOf(
+                "key" to "user_id",
+                "value" to "WEB-192203AJ"
+            ),
+            null
+        ) { PianoAnalyticsPlugin(httpDataProvider) }
+
+        assertEquals("WEB-192203AJ", httpDataProvider.parameters["user_id"])
+
+        call(
+            "setQuery",
+            mapOf(
+                "key" to "user_id"
+            ),
+            null
+        ) { PianoAnalyticsPlugin(httpDataProvider) }
+
+        assertNull(httpDataProvider.parameters["user_id"])
+    }
+
+    @Test
     fun `Check getUser`() {
         val pianoAnalytics: PianoAnalytics = mockk()
         every { PianoAnalytics.Companion.getInstance() } returns pianoAnalytics
@@ -210,7 +267,7 @@ internal class PianoAnalyticsPluginTest : BasePluginTest() {
 
     @Test
     fun `Check getVisitorId`() {
-        every { PianoAnalytics.Companion.init(any(), any(), any(), any()) } returns mockk()
+        every { PianoAnalytics.Companion.init(any(), any(), any(), any(), any()) } returns mockk()
 
         val pianoAnalytics: PianoAnalytics = mockk()
         every { PianoAnalytics.Companion.getInstance() } returns pianoAnalytics

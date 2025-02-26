@@ -1,6 +1,6 @@
 name: piano_analytics
 description: "Piano Analytics SDK Flutter"
-version: 1.0.1
+version: 1.0.2
 homepage: https://piano.io/product/analytics/
 repository: https://github.com/at-internet/piano-analytics-flutter
 
@@ -16,7 +16,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^5.0.0
 
 flutter:
   plugin:
