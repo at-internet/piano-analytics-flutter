@@ -1,3 +1,7 @@
+## 1.1.0
+
+* Calling init() multiple times with different site and collect domain will now update the site and collect domain
+
 ## 1.0.2
 
 * Added feature to customize HTTP requests

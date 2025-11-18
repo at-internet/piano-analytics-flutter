@@ -13,6 +13,7 @@ import io.flutter.plugin.common.StandardMethodCodec
 import io.piano.android.analytics.Configuration
 import io.piano.android.analytics.CustomHttpDataProvider
 import io.piano.android.analytics.PianoAnalytics
+import io.piano.android.analytics.ReportUrlProvider
 import io.piano.android.analytics.model.Event
 import io.piano.android.analytics.model.PrivacyMode
 import io.piano.android.analytics.model.PrivacyStorageFeature
@@ -53,6 +54,7 @@ class PianoAnalyticsPlugin(
 
     private lateinit var channel: MethodChannel
     private lateinit var visitorIDType: VisitorIDType
+    private lateinit var reportUrlProvider: MutableReportUrlProvider
 
     private var context: WeakReference<Context?> = WeakReference(null)
 
@@ -116,33 +118,48 @@ class PianoAnalyticsPlugin(
     }
 
     private fun handleInit(call: MethodCall) {
-        visitorIDType = getVisitorIDType(call.arg("visitorIDType"))
-        call.argument<Map<String, String>>("headers")?.let {
-            httpDataProvider.headers.putAll(it)
-        }
-        call.argument<Map<String, String>>("query")?.let {
-            httpDataProvider.parameters.putAll(it)
-        }
-        val pianoAnalytics = PianoAnalytics.init(
-            context = context.get() ?: error("Activity not attached"),
-            configuration = Configuration.Builder(
-                site = call.arg("site"),
+        try {
+            // If the method doesn't throw, then there is already an instance and we can update
+            // reportUrlProvider
+            PianoAnalytics.getInstance()
+            reportUrlProvider.update(
                 collectDomain = call.arg("collectDomain"),
-                visitorIDType = visitorIDType,
-                visitorStorageLifetime = call.argument<Int>("storageLifetimeVisitor")
-                    ?: Configuration.DEFAULT_VISITOR_STORAGE_LIFETIME,
-                visitorStorageMode = getVisitorStorageMode(call.argument("visitorStorageMode")),
-                ignoreLimitedAdTracking = call.argument<Boolean>("ignoreLimitedAdvertisingTracking")
-                    ?: false,
-            ).build(),
-            pianoConsents = getPianoConsents(),
-            customHttpDataProvider = httpDataProvider
-        )
-
-        if (visitorIDType == VisitorIDType.CUSTOM) {
-            call.argument<String>("visitorId")?.let {
-                pianoAnalytics.customVisitorId = it
+                site = call.arg("site")
+            )
+        } catch (e: IllegalStateException) {
+            visitorIDType = getVisitorIDType(call.arg("visitorIDType"))
+            call.argument<Map<String, String>>("headers")?.let {
+                httpDataProvider.headers.putAll(it)
             }
+            call.argument<Map<String, String>>("query")?.let {
+                httpDataProvider.parameters.putAll(it)
+            }
+            reportUrlProvider = MutableReportUrlProvider(
+                collectDomain = call.arg("collectDomain"),
+                site = call.arg("site")
+            )
+            val pianoAnalytics = PianoAnalytics.init(
+                context = context.get() ?: error("Activity not attached"),
+                configuration = Configuration.Builder(
+                    reportUrlProvider = reportUrlProvider,
+                    visitorIDType = visitorIDType,
+                    visitorStorageLifetime = call.argument<Int>("storageLifetimeVisitor")
+                        ?: Configuration.DEFAULT_VISITOR_STORAGE_LIFETIME,
+                    visitorStorageMode = getVisitorStorageMode(call.argument("visitorStorageMode")),
+                    ignoreLimitedAdTracking = call.argument<Boolean>("ignoreLimitedAdvertisingTracking")
+                        ?: false,
+                ).build(),
+                pianoConsents = getPianoConsents(),
+                customHttpDataProvider = httpDataProvider
+            )
+
+            if (visitorIDType == VisitorIDType.CUSTOM) {
+                call.argument<String>("visitorId")?.let {
+                    pianoAnalytics.customVisitorId = it
+                }
+            }
+        } catch (e: Exception) {
+            throw e
         }
     }
 
@@ -343,5 +360,36 @@ class PianoAnalyticsPlugin(
                 }
             }
         }
+    }
+}
+
+class MutableReportUrlProvider(
+    collectDomain: String,
+    site: Int,
+    path: String = Configuration.DEFAULT_PATH
+) : ReportUrlProvider {
+
+    @Volatile
+    private var _collectDomain = collectDomain
+    @Volatile
+    private var _site = site
+    @Volatile
+    private var _path = path
+
+    override val collectDomain: String
+        get() = _collectDomain
+    override val site: Int
+        get() = _site
+    override val path: String
+        get() = _path
+
+    fun update(
+        collectDomain: String = _collectDomain,
+        site: Int = _site,
+        path: String = _path
+    ) {
+        _collectDomain = collectDomain
+        _site = site
+        _path = path
     }
 }
