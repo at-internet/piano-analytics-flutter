@@ -32,7 +32,7 @@ internal class PianoAnalyticsPluginTest : BasePluginTest() {
     @Test
     fun `Check init`() {
         val pianoAnalytics: PianoAnalytics = mockk()
-        every { PianoAnalytics.Companion.init(any(), any(), any(), any(), any()) } returns pianoAnalytics
+        every { PianoAnalytics.init(any(), any(), any(), any(), any()) } returns pianoAnalytics
 
         val customVisitorIdSlot = slot<String>()
         every { pianoAnalytics.customVisitorId = capture(customVisitorIdSlot) } answers {}
@@ -71,7 +71,7 @@ internal class PianoAnalyticsPluginTest : BasePluginTest() {
     @Test
     fun `Check send`() {
         val pianoAnalytics: PianoAnalytics = mockk()
-        every { PianoAnalytics.Companion.getInstance() } returns pianoAnalytics
+        every { PianoAnalytics.getInstance() } returns pianoAnalytics
         every { pianoAnalytics.sendEvents(any()) } returns Unit
 
         call(
@@ -215,7 +215,7 @@ internal class PianoAnalyticsPluginTest : BasePluginTest() {
     @Test
     fun `Check getUser`() {
         val pianoAnalytics: PianoAnalytics = mockk()
-        every { PianoAnalytics.Companion.getInstance() } returns pianoAnalytics
+        every { PianoAnalytics.getInstance() } returns pianoAnalytics
         every { pianoAnalytics.userStorage.currentUser } returns User(
             "WEB-192203AJ",
             "premium",
@@ -236,7 +236,7 @@ internal class PianoAnalyticsPluginTest : BasePluginTest() {
     @Test
     fun `Check setUser`() {
         val pianoAnalytics: PianoAnalytics = mockk()
-        every { PianoAnalytics.Companion.getInstance() } returns pianoAnalytics
+        every { PianoAnalytics.getInstance() } returns pianoAnalytics
 
         val slot = slot<User>()
         every { pianoAnalytics.userStorage.currentUser = capture(slot) } answers {}
@@ -257,7 +257,7 @@ internal class PianoAnalyticsPluginTest : BasePluginTest() {
     @Test
     fun `Check deleteUser`() {
         val pianoAnalytics: PianoAnalytics = mockk()
-        every { PianoAnalytics.Companion.getInstance() } returns pianoAnalytics
+        every { PianoAnalytics.getInstance() } returns pianoAnalytics
         every { pianoAnalytics.userStorage.currentUser = null } answers {}
 
         call("deleteUser")
@@ -267,10 +267,19 @@ internal class PianoAnalyticsPluginTest : BasePluginTest() {
 
     @Test
     fun `Check getVisitorId`() {
-        every { PianoAnalytics.Companion.init(any(), any(), any(), any(), any()) } returns mockk()
+        var initialized = false
+        every { PianoAnalytics.init(any(), any(), any(), any(), any()) } answers {
+            initialized = true
+            mockk()
+        }
 
         val pianoAnalytics: PianoAnalytics = mockk()
-        every { PianoAnalytics.Companion.getInstance() } returns pianoAnalytics
+        every { PianoAnalytics.getInstance() } answers {
+            if (initialized) {
+                initialized = false
+                pianoAnalytics
+            } else throw IllegalStateException()
+        }
         every { pianoAnalytics.customVisitorId } returns "WEB-192203AJ"
         every { pianoAnalytics.visitorId } returns "WEB-192203AJ2"
 
@@ -304,7 +313,7 @@ internal class PianoAnalyticsPluginTest : BasePluginTest() {
     @Test
     fun `Check setVisitorId`() {
         val pianoAnalytics: PianoAnalytics = mockk()
-        every { PianoAnalytics.Companion.getInstance() } returns pianoAnalytics
+        every { PianoAnalytics.getInstance() } returns pianoAnalytics
 
         val slot = slot<String>()
         every { pianoAnalytics.customVisitorId = capture(slot) } answers {}

@@ -17,7 +17,7 @@ This SDK makes the implementation of Piano Analytics as simple as possible, whil
 1. Add this to your pubspec.yaml file:
     ```yaml
     dependencies:
-      piano_analytics: ^1.0.2
+      piano_analytics: ^1.1.0
     ```
 
 2. Install the plugin using the command

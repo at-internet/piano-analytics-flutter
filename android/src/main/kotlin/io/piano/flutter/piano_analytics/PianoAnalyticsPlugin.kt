@@ -119,14 +119,12 @@ class PianoAnalyticsPlugin(
 
     private fun handleInit(call: MethodCall) {
         try {
-            // If the method doesn't throw, then there is already an instance and we can update
-            // reportUrlProvider
             PianoAnalytics.getInstance()
             reportUrlProvider.update(
                 collectDomain = call.arg("collectDomain"),
                 site = call.arg("site")
             )
-        } catch (e: IllegalStateException) {
+        } catch (_: IllegalStateException) {
             visitorIDType = getVisitorIDType(call.arg("visitorIDType"))
             call.argument<Map<String, String>>("headers")?.let {
                 httpDataProvider.headers.putAll(it)
@@ -158,8 +156,6 @@ class PianoAnalyticsPlugin(
                     pianoAnalytics.customVisitorId = it
                 }
             }
-        } catch (e: Exception) {
-            throw e
         }
     }
 
@@ -341,25 +337,6 @@ class PianoAnalyticsPlugin(
             else -> error("Invalid privacy mode \"$name\"")
         }
 
-        @JvmStatic
-        private fun updatePropertyKeys(
-            eventNames: List<String>,
-            propertyKeys: MutableMap<String, MutableSet<PropertyName>>,
-            propertyName: String
-        ) {
-            eventNames.forEach { eventName ->
-                var propertyNames = propertyKeys[eventName]
-                if (propertyNames == null) {
-                    propertyNames = mutableSetOf()
-                    propertyKeys[eventName] = propertyNames
-                }
-
-                val newPropertyName = PropertyName(propertyName)
-                if (!propertyNames.contains(newPropertyName)) {
-                    propertyNames.add(newPropertyName)
-                }
-            }
-        }
     }
 }
 
