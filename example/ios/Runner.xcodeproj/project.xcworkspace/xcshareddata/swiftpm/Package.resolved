@@ -1,0 +1,23 @@
+{
+  "pins" : [
+    {
+      "identity" : "consents",
+      "kind" : "remoteSourceControl",
+      "location" : "https://gitlab.com/piano-public/sdk/ios/packages/consents",
+      "state" : {
+        "revision" : "b76131b9ca0e4cd0bbd2daa877a267e522294af5",
+        "version" : "1.0.9"
+      }
+    },
+    {
+      "identity" : "piano-analytics-apple",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/at-internet/piano-analytics-apple",
+      "state" : {
+        "revision" : "e31c486e8bacf507374dab39d2b8d32b9250d7b4",
+        "version" : "3.1.11"
+      }
+    }
+  ],
+  "version" : 2
+}

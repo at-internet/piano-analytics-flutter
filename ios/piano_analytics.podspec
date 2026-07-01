@@ -7,6 +7,8 @@ Pod::Spec.new do |s|
   s.author           = 'Piano Analytics'
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
+  s.source_files = 'piano_analytics/Sources/piano_analytics/**/*.swift'
+  s.resource_bundles = {'piano_analytics_privacy' => ['piano_analytics/Sources/piano_analytics/PrivacyInfo.xcprivacy']}
   s.dependency 'Flutter'
   s.dependency 'PianoAnalytics', '>=3.1'
   s.platform = :ios, '12.0'
