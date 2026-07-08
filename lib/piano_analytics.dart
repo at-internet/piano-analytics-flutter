@@ -256,7 +256,7 @@ class PianoAnalyticsMessageCodec extends StandardMessageCodec {
   void writeValue(WriteBuffer buffer, dynamic value) {
     if (value is DateTime) {
       buffer.putUint8(dateType);
-      buffer.putInt64(value.microsecondsSinceEpoch);
+      buffer.putInt64(value.millisecondsSinceEpoch);
     } else {
       super.writeValue(buffer, value);
     }
@@ -265,7 +265,7 @@ class PianoAnalyticsMessageCodec extends StandardMessageCodec {
   @override
   Object? readValueOfType(int type, ReadBuffer buffer) {
     if (type == dateType) {
-      return DateTime.fromMicrosecondsSinceEpoch(buffer.getInt64());
+      return DateTime.fromMillisecondsSinceEpoch(buffer.getInt64());
     }
     return super.readValueOfType(type, buffer);
   }
