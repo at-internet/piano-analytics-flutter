@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'piano_analytics'
-  s.version          = '1.1.1'
+  s.version          = '1.1.2'
   s.summary          = 'Piano Analytics SDK Flutter'
   s.homepage         = 'https://piano.io/product/analytics/'
   s.license          = { :file => '../LICENSE' }

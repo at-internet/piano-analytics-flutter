@@ -1,3 +1,6 @@
+## 1.1.2
+* Fixed crash when setting an empty array property on Android
+
 ## 1.1.1
 * Added SPM support
 
