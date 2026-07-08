@@ -39,3 +39,6 @@ Icon?
 
 gen
 Pods
+
+.build/
+.swiftpm/

@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:piano_analytics/enums.dart';
 import 'package:piano_analytics/piano_analytics.dart';
 
-main() {
+void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   final MethodChannel channel = MethodChannel(
