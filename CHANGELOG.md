@@ -1,5 +1,6 @@
 ## 1.1.2
 * Fixed crash when setting an empty array property on Android
+* Fixed DateTime values being sent as microseconds instead of milliseconds to the native SDKs
 
 ## 1.1.1
 * Added SPM support
