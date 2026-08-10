@@ -1,48 +1,52 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter/services.dart';
 import 'package:piano_analytics/enums.dart';
 
-class Property {
+class Property extends Equatable {
   final String _name;
   final dynamic _value;
   final PropertyType? _forceType;
 
-  Property.bool(
+  @override
+  List<Object?> get props => [_name, _value, _forceType];
+
+  const Property.bool(
       {required String name, required bool value, PropertyType? forceType})
       : _name = name,
         _value = value,
         _forceType = forceType;
 
-  Property.int(
+  const Property.int(
       {required String name, required int value, PropertyType? forceType})
       : _name = name,
         _value = value,
         _forceType = forceType;
 
-  Property.double(
+  const Property.double(
       {required String name, required double value, PropertyType? forceType})
       : _name = name,
         _value = value,
         _forceType = forceType;
 
-  Property.string(
+  const Property.string(
       {required String name, required String value, PropertyType? forceType})
       : _name = name,
         _value = value,
         _forceType = forceType;
 
-  Property.date(
+  const Property.date(
       {required String name, required DateTime value, PropertyType? forceType})
       : _name = name,
         _value = value,
         _forceType = forceType;
 
-  Property.intArray(
+  const Property.intArray(
       {required String name, required List<int> value, PropertyType? forceType})
       : _name = name,
         _value = value,
         _forceType = forceType;
 
-  Property.doubleArray(
+  const Property.doubleArray(
       {required String name,
       required List<double> value,
       PropertyType? forceType})
@@ -50,7 +54,7 @@ class Property {
         _value = value,
         _forceType = forceType;
 
-  Property.stringArray(
+  const Property.stringArray(
       {required String name,
       required List<String> value,
       PropertyType? forceType})
@@ -59,11 +63,14 @@ class Property {
         _forceType = forceType;
 }
 
-class Event {
+class Event extends Equatable {
   final String _name;
   final List<Property>? _properties;
 
-  Event({required String name, List<Property>? properties})
+  @override
+  List<Object?> get props => [_name, _properties];
+
+  const Event({required String name, List<Property>? properties})
       : _name = name,
         _properties = properties;
 
@@ -107,8 +114,8 @@ class PianoAnalytics {
       VisitorStorageMode? visitorStorageMode,
       bool? ignoreLimitedAdvertisingTracking,
       String? visitorId,
-      Map<String,String>? headers,
-      Map<String,String>? query,
+      Map<String, String>? headers,
+      Map<String, String>? query,
       MethodChannel? channel})
       : _parameters = {
           "site": site,
@@ -128,16 +135,12 @@ class PianoAnalytics {
     _initialized = true;
   }
 
-  Future<void> setHeader(
-      {required String key, required String? value}) async {
-    await _channel.invokeMethod("setHeader",
-        {"key": key, "value": value});
+  Future<void> setHeader({required String key, required String? value}) async {
+    await _channel.invokeMethod("setHeader", {"key": key, "value": value});
   }
 
-  Future<void> setQuery(
-      {required String key, required String? value}) async {
-    await _channel.invokeMethod("setQuery",
-        {"key": key, "value": value});
+  Future<void> setQuery({required String key, required String? value}) async {
+    await _channel.invokeMethod("setQuery", {"key": key, "value": value});
   }
 
   Future<void> sendEvents({required List<Event> events}) async {
