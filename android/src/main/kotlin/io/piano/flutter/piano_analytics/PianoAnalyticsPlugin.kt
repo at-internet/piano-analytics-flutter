@@ -298,7 +298,7 @@ class PianoAnalyticsPlugin(
                 is String -> Property(PropertyName(name), value, forceType)
                 is Date -> Property(PropertyName(name), value)
                 is List<*> -> {
-                    when (value.first()) {
+                    when (value.firstOrNull()) {
                         is Int -> Property(
                             PropertyName(name),
                             value.filterIsInstance<Int>().toTypedArray(),
@@ -316,6 +316,12 @@ class PianoAnalyticsPlugin(
                             value.filterIsInstance<String>().toTypedArray(),
                             forceType
                         )
+
+                        null -> when (forceType?.prefix) {
+                            "a:n" -> Property(PropertyName(name), emptyArray<Int>(), forceType)
+                            "a:f" -> Property(PropertyName(name), emptyArray<Double>(), forceType)
+                            else -> Property(PropertyName(name), emptyArray<String>(), forceType)
+                        }
 
                         else -> {
                             error("Invalid array value type of property \"$name\"")

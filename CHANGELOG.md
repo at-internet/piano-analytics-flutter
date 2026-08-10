@@ -1,3 +1,10 @@
+## 1.1.2
+* Fixed crash when setting an empty array property on Android
+* Fixed DateTime values being sent as microseconds instead of milliseconds to the native SDKs
+
+## 1.1.1
+* Added SPM support
+
 ## 1.1.0
 
 * Calling init() multiple times with different site and collect domain will now update the site and collect domain

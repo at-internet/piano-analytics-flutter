@@ -1,12 +1,13 @@
 Pod::Spec.new do |s|
   s.name             = 'piano_analytics'
-  s.version          = '1.0.2'
+  s.version          = '1.1.2'
   s.summary          = 'Piano Analytics SDK Flutter'
   s.homepage         = 'https://piano.io/product/analytics/'
   s.license          = { :file => '../LICENSE' }
   s.author           = 'Piano Analytics'
   s.source           = { :path => '.' }
-  s.source_files = 'Classes/**/*'
+  s.source_files = 'piano_analytics/Sources/piano_analytics/**/*.swift'
+  s.resource_bundles = { 'piano_analytics_privacy' => ['piano_analytics/Sources/piano_analytics/PrivacyInfo.xcprivacy'] }
   s.dependency 'Flutter'
   s.dependency 'PianoAnalytics', '>=3.1'
   s.platform = :ios, '12.0'
